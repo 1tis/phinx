@@ -1,5 +1,5 @@
 {
-    "name": "1tis/phinx",
+    "name": "1ti/phinx",
     "type": "library",
     "description": "Phinx makes it ridiculously easy to manage the database migrations for your PHP app.",
     "keywords": [
