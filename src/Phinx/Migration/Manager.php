@@ -334,30 +334,46 @@ class Manager
 
         // are we migrating up or down?
         $direction = $version > $current ? MigrationInterface::UP : MigrationInterface::DOWN;
+        $adapter = $this->getEnvironment($environment)->getAdapter();
+        if ($adapter->hasTransactions()) {
+            $adapter->beginTransaction();
+        }
 
-        if ($direction === MigrationInterface::DOWN) {
-            // run downs first
-            krsort($migrations);
+        try {
+            if ($direction == MigrationInterface::DOWN) {
+                // run downs first
+                krsort($migrations);
+                foreach ($migrations as $migration) {
+                    if ($migration->getVersion() <= $version) {
+                        break;
+                    }
+
+                    if (in_array($migration->getVersion(), $versions)) {
+                        $this->executeMigration($environment, $migration, MigrationInterface::DOWN);
+                    }
+                }
+            }
+
+            ksort($migrations);
             foreach ($migrations as $migration) {
-                if ($migration->getVersion() <= $version) {
+                if ($migration->getVersion() > $version) {
                     break;
                 }
 
-                if (in_array($migration->getVersion(), $versions)) {
-                    $this->executeMigration($environment, $migration, MigrationInterface::DOWN, $fake);
+                if (!in_array($migration->getVersion(), $versions)) {
+                    $this->executeMigration($environment, $migration, MigrationInterface::UP);
                 }
             }
+        } catch (\Exception $e) {
+            if ($adapter->hasTransactions()) {
+                $adapter->rollbackTransaction();
+                $this->output->writeln('<info>Exception occured - rolling back migrate command.</info>');
+            }
+            throw $e;
         }
 
-        ksort($migrations);
-        foreach ($migrations as $migration) {
-            if ($migration->getVersion() > $version) {
-                break;
-            }
-
-            if (!in_array($migration->getVersion(), $versions)) {
-                $this->executeMigration($environment, $migration, MigrationInterface::UP, $fake);
-            }
+        if ($adapter->hasTransactions()) {
+            $adapter->commitTransaction();
         }
     }
 
@@ -493,7 +509,6 @@ class Manager
     {
         // note that the migrations are indexed by name (aka creation time) in ascending order
         $migrations = $this->getMigrations($environment);
-
         // note that the version log are also indexed by name with the proper ascending order according to the version order
         $executedVersions = $this->getEnvironment($environment)->getVersionLog();
 
