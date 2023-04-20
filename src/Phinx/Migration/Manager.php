@@ -334,46 +334,30 @@ class Manager
 
         // are we migrating up or down?
         $direction = $version > $current ? MigrationInterface::UP : MigrationInterface::DOWN;
-        $adapter = $this->getEnvironment($environment)->getAdapter();
-        if ($adapter->hasTransactions()) {
-            $adapter->beginTransaction();
-        }
 
-        try {
-            if ($direction == MigrationInterface::DOWN) {
-                // run downs first
-                krsort($migrations);
-                foreach ($migrations as $migration) {
-                    if ($migration->getVersion() <= $version) {
-                        break;
-                    }
-
-                    if (in_array($migration->getVersion(), $versions)) {
-                        $this->executeMigration($environment, $migration, MigrationInterface::DOWN);
-                    }
-                }
-            }
-
-            ksort($migrations);
+        if ($direction === MigrationInterface::DOWN) {
+            // run downs first
+            krsort($migrations);
             foreach ($migrations as $migration) {
-                if ($migration->getVersion() > $version) {
+                if ($migration->getVersion() <= $version) {
                     break;
                 }
 
-                if (!in_array($migration->getVersion(), $versions)) {
-                    $this->executeMigration($environment, $migration, MigrationInterface::UP);
+                if (in_array($migration->getVersion(), $versions)) {
+                    $this->executeMigration($environment, $migration, MigrationInterface::DOWN, $fake);
                 }
             }
-        } catch (\Exception $e) {
-            if ($adapter->hasTransactions()) {
-                $adapter->rollbackTransaction();
-                $this->output->writeln('<info>Exception occured - rolling back migrate command.</info>');
-            }
-            throw $e;
         }
 
-        if ($adapter->hasTransactions()) {
-            $adapter->commitTransaction();
+        ksort($migrations);
+        foreach ($migrations as $migration) {
+            if ($migration->getVersion() > $version) {
+                break;
+            }
+
+            if (!in_array($migration->getVersion(), $versions)) {
+                $this->executeMigration($environment, $migration, MigrationInterface::UP, $fake);
+            }
         }
     }
 
