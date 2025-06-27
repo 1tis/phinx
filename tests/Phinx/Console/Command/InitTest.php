@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Console\Command;
 
@@ -43,12 +44,12 @@ class InitTest extends TestCase
 
         $this->assertStringContainsString(
             "created $fullPath",
-            $commandTester->getDisplay()
+            $commandTester->getDisplay(),
         );
 
         $this->assertFileExists(
             $fullPath,
-            'Phinx configuration not existent'
+            'Phinx configuration not existent',
         );
     }
 
@@ -98,12 +99,12 @@ class InitTest extends TestCase
             $this->assertEquals(AbstractCommand::CODE_SUCCESS, $exitCode);
             $this->assertMatchesRegularExpression(
                 "/created (.*)[\/\\\\]phinx\.php\\n/",
-                $commandTester->getDisplay(true)
+                $commandTester->getDisplay(true),
             );
 
             $this->assertFileExists(
                 'phinx.php',
-                'Phinx configuration not existent'
+                'Phinx configuration not existent',
             );
         } finally {
             chdir($current_dir);
@@ -127,12 +128,12 @@ class InitTest extends TestCase
             $this->assertEquals(AbstractCommand::CODE_SUCCESS, $exitCode);
             $this->assertMatchesRegularExpression(
                 "/created (.*)[\/\\\\]phinx.yaml\\n/",
-                $commandTester->getDisplay(true)
+                $commandTester->getDisplay(true),
             );
 
             $this->assertFileExists(
                 'phinx.yaml',
-                'Phinx configuration not existent'
+                'Phinx configuration not existent',
             );
         } finally {
             chdir($current_dir);

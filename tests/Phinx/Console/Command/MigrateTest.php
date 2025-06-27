@@ -1,32 +1,31 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Console\Command;
 
+use DateTime;
 use Phinx\Config\Config;
+use Phinx\Config\ConfigInterface;
 use Phinx\Console\Command\AbstractCommand;
 use Phinx\Console\Command\Migrate;
 use Phinx\Console\PhinxApplication;
+use Phinx\Migration\Manager;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class MigrateTest extends TestCase
 {
-    /**
-     * @var ConfigInterface|array
-     */
-    protected $config = [];
+    private ConfigInterface $config;
 
-    /**
-     * @var InputInterface $input
-     */
-    protected $input;
+    private InputInterface $input;
 
-    /**
-     * @var OutputInterface $output
-     */
-    protected $output;
+    private OutputInterface $output;
 
     protected function setUp(): void
     {
@@ -49,7 +48,7 @@ class MigrateTest extends TestCase
         ]);
 
         $this->input = new ArrayInput([]);
-        $this->output = new StreamOutput(fopen('php://memory', 'a', false));
+        $this->output = new StreamOutput(fopen('php://memory', 'ab'));
     }
 
     public function testExecute()
@@ -61,8 +60,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -102,8 +101,8 @@ class MigrateTest extends TestCase
         ]);
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -130,8 +129,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -156,8 +155,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->never())
@@ -183,8 +182,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -209,8 +208,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -228,7 +227,7 @@ class MigrateTest extends TestCase
 
     public function testMigrateExecutionOrder()
     {
-        $this->config['version_order'] = \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME;
+        $this->config['version_order'] = Config::VERSION_ORDER_EXECUTION_TIME;
 
         $application = new PhinxApplication();
         $application->add(new Migrate());
@@ -237,8 +236,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -279,8 +278,8 @@ class MigrateTest extends TestCase
         $command = $application->find('migrate');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
-        $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
             ->setConstructorArgs([$config, $this->input, $this->output])
             ->getMock();
         $managerStub->expects($this->once())
@@ -299,5 +298,102 @@ class MigrateTest extends TestCase
             'ordering by creation time',
         ]) . PHP_EOL, $commandTester->getDisplay());
         $this->assertSame(AbstractCommand::CODE_SUCCESS, $exitCode);
+    }
+
+    public function testExecuteWithDate(): void
+    {
+        $application = new PhinxApplication();
+        $application->add(new Migrate());
+
+        /** @var Migrate $command */
+        $command = $application->find('migrate');
+
+        // mock the manager class
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
+            ->setConstructorArgs([$this->config, $this->input, $this->output])
+            ->getMock();
+        $managerStub->expects($this->never())
+            ->method('migrate');
+        $managerStub->expects($this->once())
+            ->method('migrateToDateTime')
+            ->with('development', new DateTime('yesterday'), false);
+
+        $command->setConfig($this->config);
+        $command->setManager($managerStub);
+
+        $commandTester = new CommandTester($command);
+        $exitCode = $commandTester->execute(
+            ['command' => $command->getName(), '--environment' => 'development', '--date' => 'yesterday'],
+            ['decorated' => false],
+        );
+
+        $this->assertStringContainsString('using environment development', $commandTester->getDisplay());
+        $this->assertSame(AbstractCommand::CODE_SUCCESS, $exitCode);
+    }
+
+    public function testExecuteWithCount(): void
+    {
+        $application = new PhinxApplication();
+        $application->add(new Migrate());
+
+        /** @var Migrate $command */
+        $command = $application->find('migrate');
+
+        // mock the manager class
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
+            ->setConstructorArgs([$this->config, $this->input, $this->output])
+            ->getMock();
+        $managerStub->expects($this->never())
+            ->method('migrate');
+        $managerStub->expects($this->once())
+            ->method('migrateToCount')
+            ->with('development', 5, false);
+
+        $command->setConfig($this->config);
+        $command->setManager($managerStub);
+
+        $commandTester = new CommandTester($command);
+        $exitCode = $commandTester->execute(
+            ['command' => $command->getName(), '--environment' => 'development', '--count' => 5],
+            ['decorated' => false],
+        );
+
+        $this->assertStringContainsString('using environment development', $commandTester->getDisplay());
+        $this->assertSame(AbstractCommand::CODE_SUCCESS, $exitCode);
+    }
+
+    public function testExecuteWithError(): void
+    {
+        $exception = new RuntimeException('oops');
+
+        $application = new PhinxApplication();
+        $application->add(new Migrate());
+
+        /** @var Migrate $command */
+        $command = $application->find('migrate');
+
+        // mock the manager class
+        /** @var Manager&MockObject $managerStub */
+        $managerStub = $this->getMockBuilder(Manager::class)
+            ->setConstructorArgs([$this->config, $this->input, $this->output])
+            ->getMock();
+        $managerStub->expects($this->once())
+            ->method('migrate')
+            ->willThrowException($exception);
+
+        $command->setConfig($this->config);
+        $command->setManager($managerStub);
+
+        $commandTester = new CommandTester($command);
+        $exitCode = $commandTester->execute(
+            ['command' => $command->getName(), '--environment' => 'development'],
+            ['decorated' => false, 'capture_stderr_separately' => true],
+        );
+
+        $this->assertStringContainsString('using environment development', $commandTester->getDisplay());
+        $this->assertStringContainsString('RuntimeException: oops', $commandTester->getErrorOutput());
+        $this->assertSame(AbstractCommand::CODE_ERROR, $exitCode);
     }
 }

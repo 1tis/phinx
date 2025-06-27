@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Test\Phinx;
@@ -36,14 +35,14 @@ abstract class TestCase extends BaseTestCase
     public static function assertDoesNotMatchRegularExpression(
         string $pattern,
         string $string,
-        string $message = ''
+        string $message = '',
     ): void {
         static::assertThat(
             $string,
             new LogicalNot(
-                new RegularExpression($pattern)
+                new RegularExpression($pattern),
             ),
-            $message
+            $message,
         );
     }
 }

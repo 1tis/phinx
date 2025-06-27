@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Console\Command;
 
@@ -62,7 +63,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
@@ -101,7 +102,7 @@ class SeedRunTest extends TestCase
         ]);
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$config, $this->input, $this->output])
             ->getMock();
@@ -126,7 +127,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
@@ -152,7 +153,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
@@ -179,7 +180,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
@@ -204,7 +205,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$this->config, $this->input, $this->output])
             ->getMock();
@@ -212,7 +213,7 @@ class SeedRunTest extends TestCase
                     ->method('seed')->withConsecutive(
                         [$this->identicalTo('development'), $this->identicalTo('One')],
                         [$this->identicalTo('development'), $this->identicalTo('Two')],
-                        [$this->identicalTo('development'), $this->identicalTo('Three')]
+                        [$this->identicalTo('development'), $this->identicalTo('Three')],
                     );
 
         $command->setConfig($this->config);
@@ -224,7 +225,7 @@ class SeedRunTest extends TestCase
                 'command' => $command->getName(),
                 '--seed' => ['One', 'Two', 'Three'],
             ],
-            ['decorated' => false]
+            ['decorated' => false],
         );
         $this->assertSame(AbstractCommand::CODE_SUCCESS, $exitCode);
 
@@ -255,7 +256,7 @@ class SeedRunTest extends TestCase
         $command = $application->find('seed:run');
 
         // mock the manager class
-        /** @var Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
+        /** @var \Phinx\Migration\Manager|\PHPUnit\Framework\MockObject\MockObject $managerStub */
         $managerStub = $this->getMockBuilder('\Phinx\Migration\Manager')
             ->setConstructorArgs([$config, $this->input, $this->output])
             ->getMock();
@@ -272,7 +273,7 @@ class SeedRunTest extends TestCase
                 'command' => $command->getName(),
                 '--environment' => 'development',
             ],
-            ['decorated' => false]
+            ['decorated' => false],
         );
 
         $this->assertStringContainsString(implode(PHP_EOL, [

@@ -1,10 +1,15 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Util;
 
+use DateTime;
+use DateTimeZone;
 use Phinx\Util\Util;
 use RuntimeException;
+use Test\Phinx\DeprecationException;
 use Test\Phinx\TestCase;
+use Test\Phinx\TestUtils;
 
 class UtilTest extends TestCase
 {
@@ -36,7 +41,7 @@ class UtilTest extends TestCase
 
     public function testGetCurrentTimestamp()
     {
-        $dt = new \DateTime('now', new \DateTimeZone('UTC'));
+        $dt = new DateTime('now', new DateTimeZone('UTC'));
         $expected = $dt->format(Util::DATE_FORMAT);
 
         $current = Util::getCurrentTimestamp();
@@ -46,6 +51,12 @@ class UtilTest extends TestCase
         $this->assertGreaterThanOrEqual($expected, $current);
         // We limit the assertion time to 2 seconds, which should never fail.
         $this->assertLessThanOrEqual($expected + 2, $current);
+    }
+
+    public function testIsUniqueTimestamp(): void
+    {
+        $this->assertFalse(Util::isUniqueTimestamp(__DIR__ . '/_files/migrations', '20120111235330'));
+        $this->assertTrue(Util::isUniqueTimestamp(__DIR__ . '/_files/migrations', '20120111235301'));
     }
 
     public function testGetVersionFromFileName(): void
@@ -59,10 +70,17 @@ class UtilTest extends TestCase
         Util::getVersionFromFileName('foo.php');
     }
 
-    public function testGetVersionFromFileNameErrorZeroVersion(): VoidCommand
+    public function testGetVersionFromFileNameErrorZeroVersion(): void
     {
         $this->expectException(RuntimeException::class);
         Util::getVersionFromFileName('0_foo.php');
+    }
+
+    public function testMapClassNameToFileNameDeprecated(): void
+    {
+        TestUtils::throwUserDeprecatedError();
+        $this->expectException(DeprecationException::class);
+        Util::mapClassNameToFileName('Test');
     }
 
     public function providerMapClassNameToFileName(): array
