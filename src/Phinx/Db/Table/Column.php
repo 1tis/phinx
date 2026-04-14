@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * MIT License
@@ -10,6 +11,7 @@ namespace Phinx\Db\Table;
 use Phinx\Config\FeatureFlags;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\PostgresAdapter;
+use Phinx\Util\Literal;
 use RuntimeException;
 
 /**
@@ -34,6 +36,7 @@ class Column
     public const TIMESTAMP = AdapterInterface::PHINX_TYPE_TIMESTAMP;
     public const UUID = AdapterInterface::PHINX_TYPE_UUID;
     public const BINARYUUID = AdapterInterface::PHINX_TYPE_BINARYUUID;
+    public const NATIVEUUID = AdapterInterface::PHINX_TYPE_NATIVEUUID;
     /** MySQL-only column type */
     public const MEDIUMINTEGER = AdapterInterface::PHINX_TYPE_MEDIUM_INTEGER;
     /** MySQL-only column type */
@@ -60,104 +63,114 @@ class Column
     /**
      * @var string
      */
-    protected $name;
+    protected ?string $name = null;
 
     /**
      * @var string|\Phinx\Util\Literal
      */
-    protected $type;
+    protected string|Literal $type;
 
     /**
      * @var int|null
      */
-    protected $limit;
+    protected ?int $limit = null;
 
     /**
      * @var bool
      */
-    protected $null = true;
+    protected bool $null = true;
 
     /**
      * @var mixed
      */
-    protected $default;
+    protected mixed $default = null;
 
     /**
      * @var bool
      */
-    protected $identity = false;
+    protected bool $identity = false;
 
     /**
      * Postgres-only column option for identity (always|default)
      *
      * @var ?string
      */
-    protected $generated = PostgresAdapter::GENERATED_ALWAYS;
+    protected ?string $generated = PostgresAdapter::GENERATED_BY_DEFAULT;
 
     /**
      * @var int|null
      */
-    protected $seed;
+    protected ?int $seed = null;
 
     /**
      * @var int|null
      */
-    protected $increment;
+    protected ?int $increment = null;
 
     /**
      * @var int|null
      */
-    protected $scale;
+    protected ?int $scale = null;
 
     /**
      * @var string|null
      */
-    protected $after;
+    protected ?string $after = null;
 
     /**
      * @var string|null
      */
-    protected $update;
+    protected ?string $update = null;
 
     /**
      * @var string|null
      */
-    protected $comment;
+    protected ?string $comment = null;
 
     /**
      * @var bool
      */
-    protected $signed = true;
+    protected bool $signed = true;
 
     /**
      * @var bool
      */
-    protected $timezone = false;
+    protected bool $timezone = false;
 
     /**
      * @var array
      */
-    protected $properties = [];
+    protected array $properties = [];
 
     /**
      * @var string|null
      */
-    protected $collation;
+    protected ?string $collation = null;
 
     /**
      * @var string|null
      */
-    protected $encoding;
+    protected ?string $encoding = null;
 
     /**
      * @var int|null
      */
-    protected $srid;
+    protected ?int $srid = null;
 
     /**
      * @var array|null
      */
-    protected $values;
+    protected ?array $values = null;
+
+    /**
+     * @var string|null
+     */
+    protected ?string $algorithm = null;
+
+    /**
+     * @var string|null
+     */
+    protected ?string $lock = null;
 
     /**
      * Column constructor
@@ -196,7 +209,7 @@ class Column
      * @param string|\Phinx\Util\Literal $type Column type
      * @return $this
      */
-    public function setType($type)
+    public function setType(string|Literal $type)
     {
         $this->type = $type;
 
@@ -208,8 +221,12 @@ class Column
      *
      * @return string|\Phinx\Util\Literal
      */
-    public function getType()
+    public function getType(): string|Literal
     {
+        if (!isset($this->type)) {
+            throw new RuntimeException('Cannot access `type` it has not been set');
+        }
+
         return $this->type;
     }
 
@@ -275,7 +292,7 @@ class Column
      * @param mixed $default Default
      * @return $this
      */
-    public function setDefault($default)
+    public function setDefault(mixed $default)
     {
         $this->default = $default;
 
@@ -287,7 +304,7 @@ class Column
      *
      * @return mixed
      */
-    public function getDefault()
+    public function getDefault(): mixed
     {
         return $this->default;
     }
@@ -635,7 +652,7 @@ class Column
      * @param string[]|string $values Value(s)
      * @return $this
      */
-    public function setValues($values)
+    public function setValues(array|string $values)
     {
         if (!is_array($values)) {
             $values = preg_split('/,\s*/', $values) ?: [];
@@ -702,6 +719,52 @@ class Column
     }
 
     /**
+     * Sets the ALTER TABLE algorithm (MySQL-specific).
+     *
+     * @param string $algorithm Algorithm
+     * @return $this
+     */
+    public function setAlgorithm(string $algorithm)
+    {
+        $this->algorithm = $algorithm;
+
+        return $this;
+    }
+
+    /**
+     * Gets the ALTER TABLE algorithm.
+     *
+     * @return string|null
+     */
+    public function getAlgorithm(): ?string
+    {
+        return $this->algorithm;
+    }
+
+    /**
+     * Sets the ALTER TABLE lock mode (MySQL-specific).
+     *
+     * @param string $lock Lock mode
+     * @return $this
+     */
+    public function setLock(string $lock)
+    {
+        $this->lock = $lock;
+
+        return $this;
+    }
+
+    /**
+     * Gets the ALTER TABLE lock mode.
+     *
+     * @return string|null
+     */
+    public function getLock(): ?string
+    {
+        return $this->lock;
+    }
+
+    /**
      * Sets the column SRID.
      *
      * @param int $srid SRID
@@ -750,6 +813,8 @@ class Column
             'seed',
             'increment',
             'generated',
+            'algorithm',
+            'lock',
         ];
     }
 

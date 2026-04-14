@@ -55,7 +55,7 @@ Great, so you want to contribute. Let's get started:
 1. Run the unit tests locally to ensure they pass:
 
     ```
-    php vendor/bin/phpunit --config phpunit.xml
+    vendor/bin/phpunit
     ```
 
 1. Write the code and unit tests for your bug fix or feature.
@@ -77,13 +77,16 @@ install [docker-compose](https://docs.docker.com/compose/) for your platform.
     docker-compose run --rm phinx
     ```
 
-1. Install dependencies:
+    If you use Mac with Apple Silicon add `platform: linux/amd64` for `mysql` and `postgres` services first. Otherwise,
+    you might have an error `no matching manifest for linux/arm64/v8 in the manifest list entries`
+
+2. Install dependencies:
 
     ```
     composer update
     ```
 
-1. Run unittest:
+3. Run unittest:
 
     ```
     vendor/bin/phpunit
@@ -92,4 +95,4 @@ install [docker-compose](https://docs.docker.com/compose/) for your platform.
 ## Documentation
 
 The Phinx documentation is stored in the **docs** directory using the [RestructedText](https://docutils.sourceforge.io/rst.html)
-format. All documentation merged to `master` is automatically published to the Phinx documentation site available at https://docs.phinx.org.
+format. All documentation merged to main branch is automatically published to the Phinx documentation site available at https://docs.phinx.org.

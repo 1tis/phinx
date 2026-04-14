@@ -1,8 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Db\Adapter;
 
 use Phinx\Db\Adapter\ProxyAdapter;
+use Phinx\Db\Table;
 use Phinx\Db\Table\Column;
 use Phinx\Migration\IrreversibleMigrationException;
 use PHPUnit\Framework\TestCase;
@@ -16,10 +18,15 @@ class ProxyAdapterTest extends TestCase
 
     protected function setUp(): void
     {
-        $stub = $this->getMockBuilder('\Phinx\Db\Adapter\PdoAdapter')
-            ->setConstructorArgs([[]])
-            ->setMethods([])
-            ->getMock();
+        $stub = $this->getMockForAbstractClass(
+            '\Phinx\Db\Adapter\PdoAdapter',
+            [[]],
+            '',
+            true,
+            true,
+            true,
+            ['getColumnForType', 'isValidColumnType'],
+        );
 
         $stub->expects($this->any())
             ->method('isValidColumnType')
@@ -35,7 +42,7 @@ class ProxyAdapterTest extends TestCase
 
     public function testProxyAdapterCanInvertCreateTable()
     {
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->addColumn('column1', 'string')
               ->save();
 
@@ -46,7 +53,7 @@ class ProxyAdapterTest extends TestCase
 
     public function testProxyAdapterCanInvertRenameTable()
     {
-        $table = new \Phinx\Db\Table('oldname', [], $this->adapter);
+        $table = new Table('oldname', [], $this->adapter);
         $table->rename('newname')
               ->save();
 
@@ -75,7 +82,7 @@ class ProxyAdapterTest extends TestCase
                     ->setOptions($options);
             });
 
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->addColumn('acolumn', 'string')
               ->save();
 
@@ -93,7 +100,7 @@ class ProxyAdapterTest extends TestCase
             ->method('hasTable')
             ->will($this->returnValue(true));
 
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->renameColumn('oldname', 'newname')
               ->save();
 
@@ -111,7 +118,7 @@ class ProxyAdapterTest extends TestCase
             ->method('hasTable')
             ->will($this->returnValue(true));
 
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->addIndex(['email'])
               ->save();
 
@@ -129,7 +136,7 @@ class ProxyAdapterTest extends TestCase
             ->method('hasTable')
             ->will($this->returnValue(true));
 
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->addForeignKey(['ref_table_id'], 'refTable')
               ->save();
 
@@ -147,7 +154,7 @@ class ProxyAdapterTest extends TestCase
             ->method('hasTable')
             ->will($this->returnValue(true));
 
-        $table = new \Phinx\Db\Table('atable', [], $this->adapter);
+        $table = new Table('atable', [], $this->adapter);
         $table->removeColumn('thing')
               ->save();
 

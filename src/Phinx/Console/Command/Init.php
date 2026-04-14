@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * MIT License
@@ -23,7 +24,7 @@ class Init extends Command
     /**
      * @var string[]
      */
-    protected static $supportedFormats = [
+    protected static array $supportedFormats = [
         AbstractCommand::FORMAT_JSON,
         AbstractCommand::FORMAT_YML_ALIAS,
         AbstractCommand::FORMAT_YML,
@@ -33,6 +34,7 @@ class Init extends Command
     /**
      * @var string|null
      */
+    // phpcs:ignore SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint
     protected static $defaultName = 'init';
 
     /**
@@ -48,13 +50,13 @@ class Init extends Command
                 '-f',
                 InputArgument::OPTIONAL,
                 'What format should we use to initialize?',
-                AbstractCommand::FORMAT_DEFAULT
+                AbstractCommand::FORMAT_DEFAULT,
             )
             ->addArgument('path', InputArgument::OPTIONAL, 'Which path should we initialize for Phinx?')
             ->setHelp(sprintf(
                 '%sInitializes the application for Phinx%s',
                 PHP_EOL,
-                PHP_EOL
+                PHP_EOL,
             ));
     }
 
@@ -86,19 +88,34 @@ class Init extends Command
      */
     protected function resolvePath(InputInterface $input, string $format): string
     {
-        // get the migration path from the config
-        $path = (string)$input->getArgument('path');
-
         if (!in_array($format, static::$supportedFormats, true)) {
             throw new InvalidArgumentException(sprintf(
                 'Invalid format "%s". Format must be either ' . implode(', ', static::$supportedFormats) . '.',
-                $format
+                $format,
             ));
         }
 
-        // Fallback
+        // We either get the path to where to create the config path by:
+        //   1. The path argument if set
+        //   2. The configuration option if set
+        //   3. Fallback to a default path of the current directory
+        $path = (string)$input->getArgument('path');
+
         if (!$path) {
-            $path = getcwd() . DIRECTORY_SEPARATOR . self::FILE_NAME . '.' . $format;
+            $path = $input->hasOption('configuration') ? (string)$input->getOption('configuration') : null;
+            if ($path) {
+                $path = (string)$input->getOption('configuration');
+                if (DIRECTORY_SEPARATOR === '/') {
+                    $isAbsolute = ($path[0] === '/');
+                } else {
+                    $isAbsolute = (preg_match('/^[a-zA-Z]:\\\\/', $path) === 1 || $path[0] === '\\');
+                }
+                if (!$isAbsolute) {
+                    $path = getcwd() . DIRECTORY_SEPARATOR . $path;
+                }
+            } else {
+                $path = getcwd() . DIRECTORY_SEPARATOR . self::FILE_NAME . '.' . $format;
+            }
         }
 
         // Adding file name if necessary
@@ -116,14 +133,14 @@ class Init extends Command
         if (is_file($path)) {
             throw new InvalidArgumentException(sprintf(
                 'Config file "%s" already exists.',
-                $path
+                $path,
             ));
         }
 
         // Dir is invalid
         throw new InvalidArgumentException(sprintf(
             'Invalid path "%s" for config file.',
-            $path
+            $path,
         ));
     }
 
@@ -143,7 +160,7 @@ class Init extends Command
         if (!is_writable($dirname)) {
             throw new InvalidArgumentException(sprintf(
                 'The directory "%s" is not writable',
-                $dirname
+                $dirname,
             ));
         }
 
@@ -157,14 +174,14 @@ class Init extends Command
         } else {
             throw new RuntimeException(sprintf(
                 'Could not find template for format "%s".',
-                $format
+                $format,
             ));
         }
 
         if (file_put_contents($path, $contents) === false) {
             throw new RuntimeException(sprintf(
                 'The file "%s" could not be written to',
-                $path
+                $path,
             ));
         }
     }

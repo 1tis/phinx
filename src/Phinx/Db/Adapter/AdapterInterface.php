@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * MIT License
@@ -8,16 +9,20 @@
 namespace Phinx\Db\Adapter;
 
 use Cake\Database\Query;
+use Cake\Database\Query\DeleteQuery;
+use Cake\Database\Query\InsertQuery;
+use Cake\Database\Query\SelectQuery;
+use Cake\Database\Query\UpdateQuery;
 use Phinx\Db\Table\Column;
 use Phinx\Db\Table\Table;
 use Phinx\Migration\MigrationInterface;
+use Phinx\Util\Literal;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Adapter Interface.
  *
- * @author Rob Morgan <robbym@gmail.com>
  * @method \PDO getConnection()
  */
 interface AdapterInterface
@@ -48,6 +53,7 @@ interface AdapterInterface
     public const PHINX_TYPE_JSON = 'json';
     public const PHINX_TYPE_JSONB = 'jsonb';
     public const PHINX_TYPE_UUID = 'uuid';
+    public const PHINX_TYPE_NATIVEUUID = 'nativeuuid';
     public const PHINX_TYPE_FILESTREAM = 'filestream';
 
     // Geospatial database types
@@ -120,7 +126,7 @@ interface AdapterInterface
      * @param string $name Name
      * @return mixed
      */
-    public function getOption(string $name);
+    public function getOption(string $name): mixed;
 
     /**
      * Sets the console input.
@@ -271,6 +277,14 @@ interface AdapterInterface
     public function execute(string $sql, array $params = []): int;
 
     /**
+     * Function to be called before executing any migration actions.
+     *
+     * @param \Phinx\Db\Plan\AlterTable[][] $updateSequences List of update sequences to be executed
+     * @return array
+     */
+    public function preExecuteActions(array $updateSequences): array;
+
+    /**
      * Executes a list of migration actions for the given table
      *
      * @param \Phinx\Db\Table\Table $table The table to execute the actions for
@@ -280,11 +294,48 @@ interface AdapterInterface
     public function executeActions(Table $table, array $actions): void;
 
     /**
+     * Function to be called after executing any migration actions.
+     *
+     * @param array $tableNames List of table names that were affected by the actions
+     * @param array $preOptions Options that were set before executing the actions
+     * @return void
+     */
+    public function postExecuteActions(array $tableNames, array $preOptions): void;
+
+    /**
      * Returns a new Query object
      *
      * @return \Cake\Database\Query
      */
-    public function getQueryBuilder(): Query;
+    public function getQueryBuilder(string $type): Query;
+
+    /**
+     * Return a new SelectQuery object
+     *
+     * @return \Cake\Database\Query\SelectQuery
+     */
+    public function getSelectBuilder(): SelectQuery;
+
+    /**
+     * Return a new InsertQuery object
+     *
+     * @return \Cake\Database\Query\InsertQuery
+     */
+    public function getInsertBuilder(): InsertQuery;
+
+    /**
+     * Return a new UpdateQuery object
+     *
+     * @return \Cake\Database\Query\UpdateQuery
+     */
+    public function getUpdateBuilder(): UpdateQuery;
+
+    /**
+     * Return a new DeleteQuery object
+     *
+     * @return \Cake\Database\Query\DeleteQuery
+     */
+    public function getDeleteBuilder(): DeleteQuery;
 
     /**
      * Executes a SQL statement.
@@ -295,7 +346,7 @@ interface AdapterInterface
      * @param array $params parameters to use for prepared query
      * @return mixed
      */
-    public function query(string $sql, array $params = []);
+    public function query(string $sql, array $params = []): mixed;
 
     /**
      * Executes a query and returns only one row as an array.
@@ -303,7 +354,7 @@ interface AdapterInterface
      * @param string $sql SQL
      * @return array|false
      */
-    public function fetchRow(string $sql);
+    public function fetchRow(string $sql): array|false;
 
     /**
      * Executes a query and returns an array of rows.
@@ -397,7 +448,7 @@ interface AdapterInterface
      * @param string|string[] $columns Column(s)
      * @return bool
      */
-    public function hasIndex(string $tableName, $columns): bool;
+    public function hasIndex(string $tableName, string|array $columns): bool;
 
     /**
      * Checks to see if an index specified by name exists.
@@ -416,7 +467,7 @@ interface AdapterInterface
      * @param string|null $constraint Constraint name
      * @return bool
      */
-    public function hasPrimaryKey(string $tableName, $columns, ?string $constraint = null): bool;
+    public function hasPrimaryKey(string $tableName, string|array $columns, ?string $constraint = null): bool;
 
     /**
      * Checks to see if a foreign key exists.
@@ -426,7 +477,7 @@ interface AdapterInterface
      * @param string|null $constraint Constraint name
      * @return bool
      */
-    public function hasForeignKey(string $tableName, $columns, ?string $constraint = null): bool;
+    public function hasForeignKey(string $tableName, string|array $columns, ?string $constraint = null): bool;
 
     /**
      * Returns an array of the supported Phinx column types.
@@ -450,7 +501,7 @@ interface AdapterInterface
      * @param int|null $limit Limit
      * @return array
      */
-    public function getSqlType($type, ?int $limit = null): array;
+    public function getSqlType(Literal|string $type, ?int $limit = null): array;
 
     /**
      * Creates a new database.
@@ -501,5 +552,5 @@ interface AdapterInterface
      * @param mixed $value The value to be cast
      * @return mixed
      */
-    public function castToBool($value);
+    public function castToBool(mixed $value): mixed;
 }
