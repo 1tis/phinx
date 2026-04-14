@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Console\Command;
 
@@ -6,8 +7,8 @@ use InvalidArgumentException;
 use Phinx\Console\Command\AbstractCommand;
 use Phinx\Console\Command\Init;
 use Phinx\Console\PhinxApplication;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
-use Test\Phinx\TestCase;
 
 class InitTest extends TestCase
 {
@@ -43,12 +44,12 @@ class InitTest extends TestCase
 
         $this->assertStringContainsString(
             "created $fullPath",
-            $commandTester->getDisplay()
+            $commandTester->getDisplay(),
         );
 
         $this->assertFileExists(
             $fullPath,
-            'Phinx configuration not existent'
+            'Phinx configuration not existent',
         );
     }
 
@@ -81,9 +82,53 @@ class InitTest extends TestCase
         $this->writeConfig(uniqid() . $format);
     }
 
+    public function configurationOptionDataProvider(): array
+    {
+        return [
+            ['phinx.php'],
+            [sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phinx.php'],
+        ];
+    }
+
+    /**
+     * @dataProvider configurationOptionDataProvider
+     */
+    public function testConfigurationOption($configPath): void
+    {
+        $currentDir = getcwd();
+        $expectedPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phinx.php';
+        try {
+            chdir(sys_get_temp_dir());
+            $application = new PhinxApplication();
+            $application->add(new Init());
+            $command = $application->find('init');
+            $commandTester = new CommandTester($command);
+
+            $command = [
+                '--configuration' => $configPath,
+                'command' => $command->getName(),
+            ];
+
+            $exitCode = $commandTester->execute($command, ['decorated' => false]);
+            $this->assertEquals(AbstractCommand::CODE_SUCCESS, $exitCode);
+
+            $this->assertStringContainsString(
+                "created $expectedPath",
+                $commandTester->getDisplay(),
+            );
+
+            $this->assertFileExists(
+                $expectedPath,
+                'Phinx configuration not existent',
+            );
+        } finally {
+            chdir($currentDir);
+        }
+    }
+
     public function testDefaults()
     {
-        $current_dir = getcwd();
+        $currentDir = getcwd();
 
         try {
             chdir(sys_get_temp_dir());
@@ -98,21 +143,21 @@ class InitTest extends TestCase
             $this->assertEquals(AbstractCommand::CODE_SUCCESS, $exitCode);
             $this->assertMatchesRegularExpression(
                 "/created (.*)[\/\\\\]phinx\.php\\n/",
-                $commandTester->getDisplay(true)
+                $commandTester->getDisplay(true),
             );
 
             $this->assertFileExists(
                 'phinx.php',
-                'Phinx configuration not existent'
+                'Phinx configuration not existent',
             );
         } finally {
-            chdir($current_dir);
+            chdir($currentDir);
         }
     }
 
     public function testYamlFormat()
     {
-        $current_dir = getcwd();
+        $currentDir = getcwd();
 
         try {
             chdir(sys_get_temp_dir());
@@ -127,15 +172,15 @@ class InitTest extends TestCase
             $this->assertEquals(AbstractCommand::CODE_SUCCESS, $exitCode);
             $this->assertMatchesRegularExpression(
                 "/created (.*)[\/\\\\]phinx.yaml\\n/",
-                $commandTester->getDisplay(true)
+                $commandTester->getDisplay(true),
             );
 
             $this->assertFileExists(
                 'phinx.yaml',
-                'Phinx configuration not existent'
+                'Phinx configuration not existent',
             );
         } finally {
-            chdir($current_dir);
+            chdir($currentDir);
         }
     }
 

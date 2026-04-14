@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * MIT License
@@ -9,6 +10,7 @@ namespace Phinx\Db\Adapter;
 
 use Exception;
 use InvalidArgumentException;
+use Phinx\Config\FeatureFlags;
 use Phinx\Db\Table;
 use Phinx\Db\Table\Column;
 use Phinx\Util\Literal;
@@ -24,32 +26,32 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * @var array<string, mixed>
      */
-    protected $options = [];
+    protected array $options = [];
 
     /**
      * @var \Symfony\Component\Console\Input\InputInterface|null
      */
-    protected $input;
+    protected ?InputInterface $input = null;
 
     /**
      * @var \Symfony\Component\Console\Output\OutputInterface
      */
-    protected $output;
+    protected OutputInterface $output;
 
     /**
      * @var string[]
      */
-    protected $createdTables = [];
+    protected array $createdTables = [];
 
     /**
      * @var string
      */
-    protected $schemaTableName = 'phinxlog';
+    protected string $schemaTableName = 'phinxlog';
 
     /**
      * @var array
      */
-    protected $dataDomain = [];
+    protected array $dataDomain = [];
 
     /**
      * Class Constructor.
@@ -113,7 +115,7 @@ abstract class AbstractAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function getOption(string $name)
+    public function getOption(string $name): mixed
     {
         if (!$this->hasOption($name)) {
             return null;
@@ -155,7 +157,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function getOutput(): OutputInterface
     {
-        if ($this->output === null) {
+        if (!isset($this->output)) {
             $output = new NullOutput();
             $this->setOutput($output);
         }
@@ -222,9 +224,9 @@ abstract class AbstractAdapter implements AdapterInterface
         // and it is compatible with the base Phinx types.
         foreach ($dataDomain as $type => $options) {
             if (!isset($options['type'])) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'You must specify a type for data domain type "%s".',
-                    $type
+                    $type,
                 ));
             }
 
@@ -234,10 +236,10 @@ abstract class AbstractAdapter implements AdapterInterface
             }
 
             if (!in_array($options['type'], $this->getColumnTypes(), true)) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'An invalid column type "%s" was specified for data domain type "%s".',
                     $options['type'],
-                    $type
+                    $type,
                 ));
             }
 
@@ -253,10 +255,10 @@ abstract class AbstractAdapter implements AdapterInterface
 
             if (isset($options['limit']) && !is_numeric($options['limit'])) {
                 if (!defined('static::' . $options['limit'])) {
-                    throw new \InvalidArgumentException(sprintf(
+                    throw new InvalidArgumentException(sprintf(
                         'An invalid limit value "%s" was specified for data domain type "%s".',
                         $options['limit'],
-                        $type
+                        $type,
                     ));
                 }
 
@@ -306,18 +308,22 @@ abstract class AbstractAdapter implements AdapterInterface
                 'primary_key' => 'version',
             ];
 
+            $columnType = FeatureFlags::$addTimestampsUseDateTime
+                ? AdapterInterface::PHINX_TYPE_DATETIME
+                : AdapterInterface::PHINX_TYPE_TIMESTAMP;
+
             $table = new Table($this->getSchemaTableName(), $options, $this);
             $table->addColumn('version', 'biginteger', ['null' => false])
                 ->addColumn('migration_name', 'string', ['limit' => 100, 'default' => null, 'null' => true])
-                ->addColumn('start_time', 'timestamp', ['default' => null, 'null' => true])
-                ->addColumn('end_time', 'timestamp', ['default' => null, 'null' => true])
+                ->addColumn('start_time', $columnType, ['default' => null, 'null' => true])
+                ->addColumn('end_time', $columnType, ['default' => null, 'null' => true])
                 ->addColumn('breakpoint', 'boolean', ['default' => false, 'null' => false])
                 ->save();
         } catch (Exception $exception) {
             throw new InvalidArgumentException(
                 'There was a problem creating the schema table: ' . $exception->getMessage(),
                 (int)$exception->getCode(),
-                $exception
+                $exception,
             );
         }
     }
@@ -408,5 +414,20 @@ abstract class AbstractAdapter implements AdapterInterface
         $tableName = $this->quoteTableName($tableName);
 
         return in_array($tableName, $this->createdTables, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function preExecuteActions(array $updateSequences): array
+    {
+        return [];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function postExecuteActions(array $tableNames, array $preOptions): void
+    {
     }
 }

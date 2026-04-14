@@ -1,13 +1,16 @@
 <?php
+declare(strict_types=1);
 
 namespace Test\Phinx\Migration\Manager;
 
 use PDO;
 use Phinx\Db\Adapter\AdapterFactory;
+use Phinx\Db\Adapter\TablePrefixAdapter;
 use Phinx\Migration\Manager\Environment;
 use Phinx\Migration\MigrationInterface;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use stdClass;
 
 class EnvironmentTest extends TestCase
 {
@@ -88,12 +91,12 @@ class EnvironmentTest extends TestCase
         AdapterFactory::instance()->registerAdapter('pdomock', $adapter);
         $this->environment->setOptions(['connection' => $this->getPdoMock()]);
         $options = $this->environment->getAdapter()->getOptions();
-        $this->assertEquals(\PDO::ERRMODE_EXCEPTION, $options['connection']->getAttribute(\PDO::ATTR_ERRMODE));
+        $this->assertEquals(PDO::ERRMODE_EXCEPTION, $options['connection']->getAttribute(PDO::ATTR_ERRMODE));
     }
 
     public function testGetAdapterWithBadExistingPdoInstance()
     {
-        $this->environment->setOptions(['connection' => new \stdClass()]);
+        $this->environment->setOptions(['connection' => new stdClass()]);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The specified connection is not a PDO instance');
@@ -104,7 +107,7 @@ class EnvironmentTest extends TestCase
     public function testTablePrefixAdapter()
     {
         $this->environment->setOptions(['table_prefix' => 'tbl_', 'adapter' => 'mysql']);
-        $this->assertInstanceOf(\Phinx\Db\Adapter\TablePrefixAdapter::class, $this->environment->getAdapter());
+        $this->assertInstanceOf(TablePrefixAdapter::class, $this->environment->getAdapter());
 
         $tablePrefixAdapter = $this->environment->getAdapter();
         $this->assertInstanceOf('Phinx\Db\Adapter\MysqlAdapter', $tablePrefixAdapter->getAdapter()->getAdapter());
@@ -125,11 +128,11 @@ class EnvironmentTest extends TestCase
             ->getMock();
         $stub->expects($this->any())
              ->method('getVersions')
-             ->will($this->returnValue(['20110301080000']));
+             ->will($this->returnValue([20110301080000]));
 
         $this->environment->setAdapter($stub);
 
-        $this->assertEquals('20110301080000', $this->environment->getCurrentVersion());
+        $this->assertEquals(20110301080000, $this->environment->getCurrentVersion());
     }
 
     public function testExecutingAMigrationUp()
@@ -145,10 +148,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // up
-        $upMigration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20110301080000'])
-            ->setMethods(['up'])
-            ->getMock();
+        $upMigration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20110301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['up'],
+        );
         $upMigration->expects($this->once())
                     ->method('up');
 
@@ -168,10 +176,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // down
-        $downMigration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20110301080000'])
-            ->setMethods(['down'])
-            ->getMock();
+        $downMigration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20110301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['down'],
+        );
         $downMigration->expects($this->once())
                       ->method('down');
 
@@ -197,10 +210,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // migrate
-        $migration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20110301080000'])
-            ->setMethods(['up'])
-            ->getMock();
+        $migration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20110301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['up'],
+        );
         $migration->expects($this->once())
                   ->method('up');
 
@@ -220,10 +238,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // migration
-        $migration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20130301080000'])
-            ->setMethods(['change'])
-            ->getMock();
+        $migration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20130301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['change'],
+        );
         $migration->expects($this->once())
                   ->method('change');
 
@@ -243,14 +266,47 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // migration
-        $migration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20130301080000'])
-            ->setMethods(['change'])
-            ->getMock();
+        $migration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20130301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['change'],
+        );
         $migration->expects($this->once())
                   ->method('change');
 
         $this->environment->executeMigration($migration, MigrationInterface::DOWN);
+    }
+
+    public function testExecutingAFakeMigration()
+    {
+        // stub adapter
+        $adapterStub = $this->getMockBuilder('\Phinx\Db\Adapter\PdoAdapter')
+            ->setConstructorArgs([[]])
+            ->getMock();
+        $adapterStub->expects($this->once())
+                    ->method('migrated')
+                    ->willReturn($adapterStub);
+
+        $this->environment->setAdapter($adapterStub);
+
+        // migration
+        $migration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20130301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['change'],
+        );
+        $migration->expects($this->never())
+                  ->method('change');
+
+        $this->environment->executeMigration($migration, MigrationInterface::UP, true);
     }
 
     public function testGettingInputObject()
@@ -275,10 +331,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // up
-        $upMigration = $this->getMockBuilder('\Phinx\Migration\AbstractMigration')
-            ->setConstructorArgs(['mockenv', '20110301080000'])
-            ->setMethods(['up', 'init'])
-            ->getMock();
+        $upMigration = $this->getMockForAbstractClass(
+            '\Phinx\Migration\AbstractMigration',
+            ['mockenv', '20130301080000'],
+            '',
+            true,
+            true,
+            true,
+            ['up', 'init'],
+        );
         $upMigration->expects($this->once())
                     ->method('up');
         $upMigration->expects($this->once())
@@ -297,9 +358,15 @@ class EnvironmentTest extends TestCase
         $this->environment->setAdapter($adapterStub);
 
         // up
-        $seed = $this->getMockBuilder('\Phinx\Seed\AbstractSeed')
-            ->setMethods(['run', 'init'])
-            ->getMock();
+        $seed = $this->getMockForAbstractClass(
+            '\Phinx\Seed\AbstractSeed',
+            [],
+            '',
+            true,
+            true,
+            true,
+            ['run', 'init'],
+        );
 
         $seed->expects($this->once())
                     ->method('run');
